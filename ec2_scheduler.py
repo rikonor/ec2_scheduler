@@ -54,7 +54,9 @@ def get_ec2_instance(conn, name):
                 return instance
 
 def parse(file_name, aws_id, aws_secret):
-    # Get the file
+    """
+    Create a job in user's cron file for every machine schedule specified in json map
+    """
     machines = json.loads(open(file_name).read())
 
     cron = CronTab(user=True)
@@ -109,7 +111,16 @@ def command(operation, instance_name, aws_id, aws_secret, region):
         print "{0} - Instance {1} [{2}] stopped.".format(dt, instance.id, instance_name)
 
 def clear():
-    pass
+    """
+    Remove all ec2_scheduler related jobs from cron file
+    """
+    cron = CronTab(user=True)
+
+    jobs = list(cron.find_command('ec2_scheduler'))
+    for job in jobs:
+        cron.remove(job)
+
+    cron.write()
 
 if __name__ == '__main__':
     arguments = docopt(__doc__, version='EC2 Scheduler 0.1')
