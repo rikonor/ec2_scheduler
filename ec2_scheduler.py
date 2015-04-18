@@ -16,8 +16,10 @@ Options:
 
 """
 from docopt import docopt
-import boto.ec2
+import json
 from datetime import datetime
+import boto.ec2
+from crontab import CronTab
 
 
 def get_ec2_connection(aws_id, aws_secret, region_name):
@@ -52,8 +54,30 @@ def get_ec2_instance(conn, name):
                 return instance
 
 def parse(file_name, aws_id, aws_secret):
-    pass
-    # Don't create a line in cron if it already exists!
+    # Get the file
+    machines = json.loads(open(file_name).read())
+
+    cron = CronTab(user=True)
+
+    for machine in machines:
+        # Don't create a line in cron if it already exists!
+
+        for op in ['start', 'stop']:
+            # Times defined in machine should be "start_time" or "stop_time"
+            op_time = datetime.strptime(machine[op + '_time'], '%H:%M')
+
+            # The op should conform to the options this program takes: start / stop
+            job = cron.new(
+                command='python ec2_scheduler {op} {name} --id {aws_id} --secret {aws_secret} --region {region}'.format(
+                    op=op, name=machine['name'], aws_id=aws_id, aws_secret=aws_secret, region=machine['region']
+                )
+            )
+
+            job.hour.on(op_time.hour)
+            job.minute.on(op_time.minute)
+
+    cron.write()
+
 
 def command(operation, instance_name, aws_id, aws_secret, region):
     """
