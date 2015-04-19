@@ -17,6 +17,7 @@ Options:
 """
 from docopt import docopt
 import json
+import os
 from datetime import datetime
 import boto.ec2
 from crontab import CronTab
@@ -70,7 +71,8 @@ def parse(file_name, aws_id, aws_secret):
 
             # The op should conform to the options this program takes: start / stop
             job = cron.new(
-                command='python ec2_scheduler {op} {name} --id {aws_id} --secret {aws_secret} --region {region}'.format(
+                command='python {path} {op} {name} --id {aws_id} --secret {aws_secret} --region {region}'.format(
+                    path=os.path.realpath(__file__),
                     op=op, name=machine['name'], aws_id=aws_id, aws_secret=aws_secret, region=machine['region']
                 )
             )
